@@ -1,6 +1,6 @@
 # Rainfall Forecast Adjustment using TabPFN
 
-This project demonstrates how rainfall forecast accuracy can be improved using TabPFN — a transformer-based meta-learning model for tabular data. It aligns with GSoC themes involving machine learning, open environmental data, and climate informatics.
+This project demonstrates how rainfall forecast accuracy can be improved using TabPFN — a transformer-based meta-learning model for tabular data. It involves machine learning, open environmental data, and climate informatics.
 
 ---
 
@@ -14,7 +14,7 @@ To post-process traditional rainfall simulations using TabPFN and improve foreca
 
 Most rainfall forecasts rely on physical models or historical climatology, which may not capture localized deviations well. By using machine learning to learn from past forecast errors, we can make corrections that improve real-world relevance.
 
-This is especially relevant for GSoC in areas such as:
+This is can be used in areas such as:
 
 - Earth observation and climate forecasting
 - Environmental informatics and sustainability
