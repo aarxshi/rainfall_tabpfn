@@ -1,0 +1,30 @@
+# Python cache and logs
+__pycache__/
+*.py[cod]
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.venv/
+env/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Compiled files
+*.so
+
+# Notebook metadata
+*.nbconvert.ipynb
+
+# Output and results
+/results/
+*.csv
+
+
+data/rainfall_data.csv
