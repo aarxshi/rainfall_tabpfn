@@ -22,8 +22,7 @@ Thumbs.db
 # Notebook metadata
 *.nbconvert.ipynb
 
-# Output and results
-/results/
+# Output
 *.csv
 
 
