@@ -30,7 +30,7 @@ Machine learning offers a powerful approach to **post-process** these initial fo
 
 ## Dataset
 
-* **Source:** [NDAP India – Rainfall Normal Dataset](https://ndap.niti.gov.in/) (Note: Provide the most direct link if possible, otherwise the main portal is fine).
+* **Source:** [NDAP India – Rainfall Normal Dataset](https://ndap.niti.gov.in/dataset/7319) .
 * **Description:** Contains historical daily rainfall measurements and climatological 'normal' values aggregated at the district level across India.
 * **Key Columns Used:**
     * `Calendar Day`: Date of observation.
@@ -61,8 +61,6 @@ rainfall-tabpfn/
 ├── rainfall_forecast_tabpfn.ipynb     # Main notebook
 ├── README.md                          # This file
 ├── requirements.txt                   # Python dependencies
-├── data/
-│   └── rainfall_data.csv              # Input dataset
 └── results/
     └── plots                          # Model outputs
 ```
