@@ -1,6 +1,6 @@
-# Rainfall Forecast Adjustment using TabPFN
+# 🌧️ Rainfall Forecast Adjustment using TabPFN
 
-This project demonstrates how rainfall forecast accuracy can be improved using TabPFN — a transformer-based meta-learning model for tabular data. It involves machine learning, open environmental data, and climate informatics.
+This project demonstrates how rainfall forecast accuracy can be improved using **TabPFN** — a transformer-based meta-learning model for tabular data. It involves machine learning, open environmental data, and climate informatics.
 
 ---
 
@@ -14,12 +14,12 @@ To post-process traditional rainfall simulations using TabPFN and improve foreca
 
 Most rainfall forecasts rely on physical models or historical climatology, which may not capture localized deviations well. By using machine learning to learn from past forecast errors, we can make corrections that improve real-world relevance.
 
-This is can be used in areas such as:
+This approach has applications in:
 
-- Earth observation and climate forecasting
-- Environmental informatics and sustainability
-- Open data science
-- Meta-learning and few-shot learning models
+- Earth observation and climate forecasting  
+- Environmental informatics and sustainability  
+- Open data science  
+- Meta-learning and few-shot learning research  
 
 ---
 
@@ -42,28 +42,34 @@ rainfall-tabpfn/
 
 - **Source**: NDAP India – [Rainfall Normal Dataset](https://ndap.niti.gov.in/dataset/7319)
 - Contains daily rainfall values (actual and normal) by district and state
-- Columns used: `Calendar Day`, `State`, `District`, `Daily actual`, `Daily normal`
+- Key columns used:
+  - `Calendar Day`
+  - `State`
+  - `District`
+  - `Daily actual`
+  - `Daily normal`
 
 ---
 
 ## How It Works
 
-1. Load and clean the rainfall dataset
-2. Simulate a basic forecast using `Daily normal`
+1. Load and clean the rainfall dataset  
+2. Simulate a basic forecast using `Daily normal`  
 3. Train a `TabPFNRegressor` on:
-   - `simulated_forecast`, `Month`, `Year`, `State`, `District`
-4. Predict the forecast error
-5. Adjust the forecast to reduce error
+   - `simulated_forecast`, `Month`, `Year`, `State`, `District`  
+4. Predict the forecast error  
+5. Adjust the forecast to reduce the error  
 
 ---
 
 ## Evaluation
 
-- Metric: **Mean Absolute Error (MAE)**
-- Comparison: Naive forecast vs. TabPFN-adjusted forecast
-- Visualization: Scatter plot of true vs. predicted forecast error
+- Metric: **Mean Absolute Error (MAE)**  
+- Comparison: Naive forecast vs. TabPFN-adjusted forecast  
+- Visualization: Scatter plot of true vs. predicted forecast error  
 
 ---
+
 
 ## How to Run
 
@@ -88,27 +94,37 @@ rainfall-tabpfn/
 
 ## GSoC Relevance
 
-This project showcases:
+This prototype was developed as part of my GSoC preparation with **OpenClimateFix**. It demonstrates:
 
-- Use of **TabPFN**, a state-of-the-art few-shot learner for tabular data
-- Application of **machine learning in climate informatics**
-- Integration of **open government datasets** (NDAP India)
-- Reproducible ML pipelines in **Jupyter Notebooks**
+- Hands-on use of **TabPFN** for real-world time-series regression  
+- Practical ML integration with **open government datasets**  
+- Commitment to **reproducible, documented, and open-source** climate tools  
+- Exploration of **ML post-processing** for improving weather forecasts  
 
-### Potential Extensions:
-- Add **geospatial or satellite-based features**
-- Expand to **weekly/monthly forecasts**
-- Incorporate **citizen science rainfall reports**
-- Use **other climate indicators** as targets
+## Challenges Faced
+
+- Managing sparse or noisy inputs across districts  
+- Avoiding overfitting on small windows of error data  
+- Ensuring spatial generalization across Indian regions  
+
+---
+
+## Future Work
+
+- Add **satellite and geospatial features**  
+- Expand to **weekly/monthly rainfall** trends  
+- Use **ensemble forecasts** for more robust inputs  
+- Apply the same framework to **solar PV or temperature forecasts**
 
 ---
 
 ## License
 
-This project is open source and uses the **MIT License**.
+This project is released under the **MIT License**. Contributions welcome!
 
 ---
 
 ## Contact
 
-Feel free to fork, raise issues, or contribute! This work is part of my exploration in applying ML for climate data, and is potentially aligned with a GSoC proposal.
+I'm exploring how open-source ML tools can solve real-world climate challenges.  
+Feel free to open issues, submit PRs, or connect via GitHub.
