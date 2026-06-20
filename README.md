@@ -1,133 +1,114 @@
-# 🌧️Rainfall Forecast Post-Processing with TabPFN
+# Rainfall Forecast Post-Processing with TabPFN
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-**GSoC Application Support Material:** This project was developed in preparation for Google Summer of Code, exploring machine learning for climate applications using open data.
+
+A machine learning project exploring **forecast post-processing** for daily rainfall prediction in India, using TabPFN to correct systematic bias in climatological baseline forecasts.
 
 ## Overview
 
-This project explores the use of **TabPFN**, a Transformer-based model optimized for tabular data, to **improve the accuracy of daily rainfall forecasts**. By learning patterns in historical forecast errors derived from open environmental data, TabPFN acts as a post-processing step to adjust initial simulations, leading to more accurate predictions. The core methodology involves machine learning, time-series analysis, and working with open climate datasets.
+This project uses **TabPFN**, a transformer-based, prior-fitted tabular foundation model, to improve the accuracy of daily rainfall forecasts. Rather than predicting rainfall directly, TabPFN is trained to predict the *error* of a baseline climatological forecast (the historical "daily normal" for a given location and date). Adding this predicted error back to the baseline produces an adjusted forecast that is, on average, closer to the true observed rainfall.
 
-## Motivation & Relevance
+## Motivation
 
-Traditional rainfall forecasts often rely on numerical weather prediction (NWP) models or historical climatology (like 'daily normal' values). While valuable, these methods can exhibit systematic biases or fail to capture localized, short-term deviations accurately.
+Operational rainfall forecasts that reach farmers, irrigation departments, and disaster-preparedness agencies are typically built on numerical weather prediction (NWP) models or long-term climatological averages. While useful, these baselines carry systematic biases — they can consistently over- or under-estimate rainfall for a given location, season, or year, and often miss short-term, localized deviations from the historical pattern.
 
-Machine learning offers a powerful approach to **post-process** these initial forecasts. By training a model on historical data, we can learn to predict the *expected error* of the baseline forecast under different conditions (e.g., time of year, location). Adding this predicted error back to the baseline forecast yields an adjusted, often more accurate, prediction.
-
-**Why this matters for GSoC & OpenClimateFix:**
-
-1.  **Improving Environmental Forecasts:** Accurate rainfall prediction is vital for agriculture, water resource management, and disaster preparedness.
-2.  **ML for Climate Science:** Demonstrates a practical application of modern ML (Transformers for tabular data) on a real-world environmental problem.
-3.  **Methodological Applicability:** The **post-processing technique** used here is highly relevant to other forecasting domains. For instance, similar methods are used by organizations like **OpenClimateFix** to improve solar energy forecasts by correcting biases in NWP model outputs.
-4.  **Open Data & Reproducibility:** Leverages open government data and emphasizes a clear, reproducible workflow.
-
-## Key Features
-
-* **TabPFN Integration:** Utilizes the prior-diffusion-based TabPFN model for fast and effective tabular regression.
-* **Forecast Error Correction:** Focuses on modeling the *error* of a baseline forecast (`Daily normal`) rather than predicting rainfall directly.
-* **Open Dataset:** Uses publicly available rainfall data from India's NDAP.
-* **Time-Series & Categorical Features:** Incorporates temporal features (month, year) and geographical identifiers (state, district) into the model.
-* **Evaluation Framework:** Compares the Mean Absolute Error (MAE) of the adjusted forecast against the baseline.
+Forecast post-processing addresses this without replacing the baseline: instead of solving the harder problem of predicting rainfall from scratch, a model only needs to learn how wrong the baseline tends to be, and under what conditions. This is the same logic used in adjacent domains — for example, residual-correction techniques are used to improve solar and wind energy forecasts by correcting NWP biases. Applying it to rainfall has direct relevance for agricultural planning and water resource management.
 
 ## Dataset
 
-* **Source:** [NDAP India – Rainfall Normal Dataset](https://ndap.niti.gov.in/dataset/7319) .
-* **Description:** Contains historical daily rainfall measurements and climatological 'normal' values aggregated at the district level across India.
-* **Key Columns Used:**
-    * `Calendar Day`: Date of observation.
-    * `State`: State name.
-    * `District`: District name.
-    * `Daily actual`: Measured rainfall for the day (mm).
-    * `Daily normal`: Historical average/climatological rainfall for that day and location (mm). Used here as the baseline forecast.
-    * `Percentage of daily departure`: Calculated departure from normal.
+- **Source:** [NDAP India – Rainfall Normal Dataset](https://ndap.niti.gov.in/dataset/7319), published on India's National Data and Analytics Platform (NITI Aayog, Government of India).
+- **Size:** 961,752 rows x 30 columns, covering daily, weekly, cumulative, and monthly rainfall records at the district level across India.
+- **Granularity:** One row per district per calendar day.
+
+**Columns used:**
+
+| Column | Description |
+|---|---|
+| `Calendar Day` | Date of observation |
+| `State` / `District` | Location identifiers |
+| `Daily actual` | Measured rainfall (mm) |
+| `Daily normal` | Historical climatological average rainfall (mm) — used as the baseline forecast |
+| `Percentage of daily departure` | Departure of actual from normal |
+
+Roughly 10–11% of rows are missing `Daily actual` or `Daily normal` and were dropped prior to modelling.
 
 ## Methodology
 
-The core workflow implemented in the accompanying notebook (`rainfall_forecast_tabpfn.ipynb`) is:
+1. **Baseline forecast:** `Daily normal` is treated as the initial, uncorrected forecast.
+2. **Target definition:** `forecast_error = Daily actual - Daily normal` becomes the regression target, not rainfall itself.
+3. **Feature engineering:** `Month` and `Year` are extracted from the date; `State` and `District` are label-encoded into numeric features.
+4. **Model:** TabPFN is trained to predict `forecast_error` from the baseline value, temporal features, and location identifiers. As a prior-fitted model, it requires no manual hyperparameter tuning.
+5. **Sampling:** TabPFN has practical limits on training-set size, so the model is trained on a representative sample of 1,000 rows and evaluated on a held-out sample of 500 rows (80/20 split, fixed seed).
+6. **Forecast adjustment:** `Adjusted Forecast = Daily normal + Predicted Forecast Error`.
+7. **Evaluation:** Mean Absolute Error (MAE) between the adjusted forecast and true observed rainfall.
 
-1.  **Load & Preprocess Data:** Read the dataset using Pandas, handle missing values, and convert date columns.
-2.  **Baseline Forecast Simulation:** Use the `Daily normal` column as the initial, uncorrected forecast.
-3.  **Calculate Forecast Error:** Compute the error of the baseline: `forecast_error = Daily actual - Daily normal`. This becomes the target variable for TabPFN.
-4.  **Feature Engineering:** Extract temporal features (`Month`, `Year`) from the date. Encode categorical features (`State`, `District`) numerically.
-5.  **Train TabPFN Regressor:** Train TabPFN to predict the `forecast_error` using features like the baseline forecast (`Daily normal`), temporal features, and location identifiers.
-    * *Note:* Due to TabPFN's computational requirements on large datasets, training is performed on a representative sample.
-6.  **Predict Forecast Error:** Use the trained TabPFN model to predict the forecast error on unseen test data.
-7.  **Adjust Forecast:** Calculate the final, adjusted forecast: `Adjusted Forecast = Baseline Forecast (Daily normal) + Predicted Forecast Error`.
-8.  **Evaluate:** Compare the MAE between the `Adjusted Forecast` and the `Daily actual` rainfall against the MAE between the `Baseline Forecast` and the `Daily actual` rainfall. Visualize prediction quality.
+## Results
+
+The adjusted forecast achieved an **MAE of 3.71 mm** against true observed daily rainfall on the held-out 500-row test sample.
+
+Plots are available in `results/plots/`:
+
+- `Daily actual rainfall.png` — distribution of daily actual rainfall
+- `Daily actual vs normal.png` — baseline ("Daily normal") vs. actual rainfall
+- `Daily forecast errors.png` — distribution of daily forecast errors (actual − normal)
+- `Forecast error by month.png` — seasonal pattern in forecast error
+- `Model improvement.png` — baseline forecast vs. TabPFN-adjusted forecast, compared against true rainfall
+- `Actual rainfall per month.png` — monthly rainfall totals
+- `Average monthly rain.png` — average rainfall by month
+- `Average rainfall across states.png` — average daily rainfall by state, illustrating geographic variation
+- `Time series - actual rainfall.png` — actual rainfall over time
 
 ## Project Structure
-
 ```
 rainfall-tabpfn/
-├── rainfall_forecast_tabpfn.ipynb     # Main notebook
-├── README.md                          # This file
-├── requirements.txt                   # Python dependencies
+
+├── rainfall_forecast_adjustment.ipynb   # Main notebook
+
+├── README.md                            # This file
+
+├── requirements.txt                     # Python dependencies
+
 └── results/
-    └── plots                          # Model outputs
+
+└── plots/                           # Generated figures
 ```
 ## Getting Started
 
 **Prerequisites:**
+- Python >= 3.8
+- Jupyter Notebook or JupyterLab
 
-* Python (>= 3.8 recommended)
-* Jupyter Notebook or JupyterLab
+**Installation and execution:**
 
-**Installation & Execution:**
+```bash
+git clone https://github.com/aarxshi/rainfall_tabpfn.git
+cd rainfall_tabpfn
+pip install -r requirements.txt
+```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/aarxshi/rainfall-tabpfn.git]
-    cd rainfall-tabpfn
-    ```
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    *(Note: TabPFN installation might require specific dependencies or PyTorch)*
-3.  **Prepare Data:** Ensure the input dataset (`data/data.csv`) is present.
-4.  **Launch Jupyter:**
-    ```bash
-    jupyter notebook
-    # or
-    # jupyter lab
-    ```
-5.  **Run the Notebook:** Open and execute the cells in `rainfall_forecast_tabpfn.ipynb`.
+> Note: TabPFN installation may require specific dependencies or a working PyTorch installation.
 
-## GSoC Context & Learning Outcomes
+Place the input dataset at `data/data.csv`, then launch Jupyter and run `rainfall_forecast_adjustment.ipynb` top to bottom. All sampling steps use a fixed `random_state=42` for reproducibility.
 
-This project served as a practical exercise in preparation for GSoC, focusing on techniques relevant to organizations like **OpenClimateFix**.
+## Limitations
 
-* **Alignment:** Demonstrates experience in applying ML to improve environmental time-series forecasts using open data – a core theme in climate-focused open-source work.
-* **Methodology:** The ML post-processing approach is directly analogous to methods used for improving solar PV or wind energy forecasts based on NWP outputs.
-* **Learning:** Provided hands-on experience with:
-    * Using the novel TabPFN model for regression on real-world tabular data.
-    * Preprocessing and feature engineering for environmental time-series data.
-    * Evaluating forecast model performance (MAE, visualizations).
-    * Managing dependencies and ensuring reproducibility (`requirements.txt`).
-    * Working with geospatial variations within a tabular ML framework.
-
-## Challenges & Learnings
-
-* **Data Sparsity/Noise:** Handling missing values and potential inconsistencies in real-world datasets requires careful preprocessing and robust modeling choices.
-* **Computational Constraints:** TabPFN, while powerful, has limitations on dataset size for training. Sampling strategies were necessary, highlighting trade-offs between performance and computational resources.
-* **Generalization:** Ensuring the model generalizes across diverse geographical regions (different states/districts) requires careful feature engineering and validation. Learned the importance of spatial considerations even in non-explicitly geospatial models.
+- TabPFN's training-set constraints mean the model sees only 1,000 of roughly 850,000 usable rows, which likely limits generalization across India's diverse climatic regions.
+- The baseline (unadjusted) MAE is not currently computed on the same test rows for a direct side-by-side comparison — a natural next step.
+- No explicit geospatial features (e.g. latitude/longitude) are used; location is captured only via label-encoded categorical identifiers.
 
 ## Future Work
 
-* **Incorporate Geospatial Features:** Explicitly add latitude/longitude or other spatial features.
-* **Advanced Feature Engineering:** Include lagged rainfall values, weather variables from other sources (if available), or satellite data.
-* **Explore Other Models:** Compare TabPFN performance against other ML models (e.g., Gradient Boosting, LSTMs).
-* **Different Time Horizons:** Adapt the framework for weekly or monthly rainfall forecasts.
-* **Transfer Learning:** Investigate if models trained on one region could be fine-tuned for another.
-* **Application to Other Domains:** Apply the post-processing framework to solar PV or temperature forecast data.
+- Compute baseline MAE on the same test split for a direct before/after comparison.
+- Incorporate explicit geospatial features (latitude/longitude).
+- Add lagged rainfall values or external weather variables.
+- Compare TabPFN against other regression models (e.g. gradient boosting, LSTMs).
+- Extend the framework to weekly or monthly forecast horizons.
+- Apply the same post-processing approach to other forecasting domains, such as solar or wind energy.
 
 ## License
 
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome! Please feel free to open an issue or submit a pull request.
-
-## Contact
-
-Interested in discussing ML for climate, open data, or GSoC? Feel free to connect via GitHub.
+Issues and pull requests are welcome.
